@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert'; // Importante para base64Encode e base64Decode
 
 class Visita {
   final Uint8List assinatura;
@@ -16,6 +17,26 @@ class Visita {
     required this.dataHora,
     this.foto,
   });
+
+  // Para salvar como JSON
+  Map<String, dynamic> toJson() => {
+        'assinatura': base64Encode(assinatura),
+        'latitude': latitude,
+        'longitude': longitude,
+        'endereco': endereco,
+        'dataHora': dataHora.toIso8601String(),
+        'foto': foto != null ? base64Encode(foto!) : null,
+      };
+
+  // Para ler do JSON
+  factory Visita.fromJson(Map<String, dynamic> json) => Visita(
+        assinatura: base64Decode(json['assinatura']),
+        latitude: json['latitude'],
+        longitude: json['longitude'],
+        endereco: json['endereco'],
+        dataHora: DateTime.parse(json['dataHora']),
+        foto: json['foto'] != null ? base64Decode(json['foto']) : null,
+      );
 }
 
 class Observacao {
@@ -30,4 +51,20 @@ class Observacao {
     required this.observacao,
     required this.dataHora,
   });
+
+  // Para salvar como JSON
+  Map<String, dynamic> toJson() => {
+        'nome': nome,
+        'contato': contato,
+        'observacao': observacao,
+        'dataHora': dataHora.toIso8601String(),
+      };
+
+  // Para ler do JSON
+  factory Observacao.fromJson(Map<String, dynamic> json) => Observacao(
+        nome: json['nome'],
+        contato: json['contato'],
+        observacao: json['observacao'],
+        dataHora: DateTime.parse(json['dataHora']),
+      );
 }

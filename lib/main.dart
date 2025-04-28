@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'realizar_visita_page.dart';
-import 'fazer_observacao_page.dart';
-import 'historico_page.dart';
+import 'login_page.dart'; // Tela de login
+import 'visita_storage.dart'; // Importar o VisitaStorage
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Necessário para usar async no main
+  await VisitaStorage.carregarDados(); // Carregar visitas e observações salvas
   runApp(const MyApp());
 }
 
@@ -13,61 +14,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Coleta de Assinaturas',
+      title: 'App Visita',
       theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.blue,
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const HomePage(),
+      home: const LoginPage(), // Tela inicial de login
     );
   }
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Menu Principal'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const RealizarVisitaPage()),
-                );
-              },
-              child: const Text('Realizar Visita'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const FazerObservacaoPage()),
-                );
-              },
-              child: const Text('Fazer Observação'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HistoricoPage()),
-                );
-              },
-              child: const Text('Histórico'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
