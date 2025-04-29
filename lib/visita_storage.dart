@@ -1,44 +1,94 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'visita_model.dart';
+import 'package:flutter/foundation.dart';
+
+
+// Se tiver também o modelo de Observacao:
+class Observacao {
+  final String nome;
+  final String contato;
+  final String observacao;
+  final DateTime dataHora;
+
+  Observacao({
+    required this.nome,
+    required this.contato,
+    required this.observacao,
+    required this.dataHora,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'nome': nome,
+      'contato': contato,
+      'observacao': observacao,
+      'dataHora': dataHora.toIso8601String(),
+    };
+  }
+
+  factory Observacao.fromMap(Map<String, dynamic> map) {
+    return Observacao(
+      nome: map['nome'] ?? '',
+      contato: map['contato'] ?? '',
+      observacao: map['observacao'] ?? '',
+      dataHora: DateTime.tryParse(map['dataHora'] ?? '') ?? DateTime.now(),
+    );
+  }
+}
 
 class VisitaStorage {
-  static final List<Visita> visitas = [];
-  static final List<Observacao> observacoes = [];
-
-  static Future<void> adicionarVisita(Visita visita) async {
-    visitas.add(visita);
-    await _salvarVisitas();
-  }
-
-  static Future<void> adicionarObservacao(Observacao observacao) async {
-    observacoes.add(observacao);
-    await _salvarObservacoes();
-  }
+  static List<Visita> visitas = [];
+  static List<Observacao> observacoes = [];
 
   static Future<void> carregarDados() async {
     final prefs = await SharedPreferences.getInstance();
-    
-    // Carregar visitas
-    final visitasJson = prefs.getStringList('visitas') ?? [];
+
+    // Visitas
+    final visitasString = prefs.getStringList('visitas') ?? [];
+    visitas = [];
+    for (var v in visitasString) {
+      try {
+        final map = json.decode(v);
+        visitas.add(Visita.fromMap(map));
+      } catch (e) {
+        debugPrint('Erro ao carregar uma visita: $e');
+      }
+    }
+
+    // Observações
+    final obsString = prefs.getStringList('observacoes') ?? [];
+    observacoes = [];
+    for (var o in obsString) {
+      try {
+        final map = json.decode(o);
+        observacoes.add(Observacao.fromMap(map));
+      } catch (e) {
+        debugPrint('Erro ao carregar uma observação: $e');
+      }
+    }
+  }
+
+  static Future<void> salvarVisita(Visita visita) async {
+    final prefs = await SharedPreferences.getInstance();
+    visitas.add(visita);
+    final visitasMapeadas = visitas.map((v) => json.encode(v.toMap())).toList();
+    await prefs.setStringList('visitas', visitasMapeadas);
+  }
+
+  static Future<void> salvarObservacao(Observacao obs) async {
+    final prefs = await SharedPreferences.getInstance();
+    observacoes.add(obs);
+    final obsMapeadas = observacoes.map((o) => json.encode(o.toMap())).toList();
+    await prefs.setStringList('observacoes', obsMapeadas);
+  }
+
+  static Future<void> limparTudo() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('visitas');
+    await prefs.remove('observacoes');
     visitas.clear();
-    visitas.addAll(visitasJson.map((e) => Visita.fromJson(jsonDecode(e))));
-
-    // Carregar observações
-    final observacoesJson = prefs.getStringList('observacoes') ?? [];
     observacoes.clear();
-    observacoes.addAll(observacoesJson.map((e) => Observacao.fromJson(jsonDecode(e))));
-  }
-
-  static Future<void> _salvarVisitas() async {
-    final prefs = await SharedPreferences.getInstance();
-    final visitasJson = visitas.map((v) => jsonEncode(v.toJson())).toList();
-    await prefs.setStringList('visitas', visitasJson);
-  }
-
-  static Future<void> _salvarObservacoes() async {
-    final prefs = await SharedPreferences.getInstance();
-    final observacoesJson = observacoes.map((o) => jsonEncode(o.toJson())).toList();
-    await prefs.setStringList('observacoes', observacoesJson);
   }
 }

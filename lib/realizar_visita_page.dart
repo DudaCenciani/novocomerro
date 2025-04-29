@@ -4,6 +4,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:signature/signature.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'visita_model.dart';
+import 'visita_storage.dart';
 import 'visualizar_visita_page.dart';
 
 class RealizarVisitaPage extends StatefulWidget {
@@ -15,7 +18,9 @@ class RealizarVisitaPage extends StatefulWidget {
 
 class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
   final SignatureController _signatureController = SignatureController(penStrokeWidth: 3, penColor: Colors.black);
+  final TextEditingController _nomePacienteController = TextEditingController();
   Uint8List? _foto;
+  bool _salvando = false;
 
   Future<void> _tirarFoto() async {
     final picker = ImagePicker();
@@ -30,124 +35,139 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
   }
 
   Future<void> _salvarVisita() async {
+    if (_nomePacienteController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, informe o nome do paciente.')),
+      );
+      return;
+    }
+
     if (_signatureController.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, assine antes de salvar.')),
+        const SnackBar(content: Text('Por favor, colete a assinatura.')),
       );
       return;
     }
 
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Localização não está ativada.')),
-      );
-      return;
-    }
+    setState(() {
+      _salvando = true;
+    });
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission != LocationPermission.whileInUse && permission != LocationPermission.always) {
+    try {
+      // Localização
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Permissão de localização negada.')),
+          const SnackBar(content: Text('Serviço de localização desativado.')),
         );
         return;
       }
-    }
 
-    final position = await Geolocator.getCurrentPosition();
-    List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-    Placemark place = placemarks.first;
-    String enderecoCompleto = '${place.street}, ${place.subLocality}, ${place.locality} - ${place.administrativeArea}';
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Permissão de localização negada.')),
+          );
+          return;
+        }
+      }
 
-    final assinaturaBytes = await _signatureController.toPngBytes();
-    if (assinaturaBytes == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao capturar assinatura.')),
+      final position = await Geolocator.getCurrentPosition();
+      final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+      final endereco = "${placemarks.first.street}, ${placemarks.first.subLocality}, ${placemarks.first.locality}";
+
+      // Dados da visita
+      final assinatura = await _signatureController.toPngBytes();
+      final now = DateTime.now();
+      final prefs = await SharedPreferences.getInstance();
+      final agenteSaude = prefs.getString('usuario') ?? 'Agente Desconhecido';
+
+      final novaVisita = Visita(
+        agenteSaude: agenteSaude,
+        nomePaciente: _nomePacienteController.text,
+        endereco: endereco,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        dataHora: now,
+        assinatura: assinatura!,
+        foto: _foto,
       );
-      return;
-    }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VisualizarVisitaPage(
-          assinatura: assinaturaBytes,
-          dataHora: DateTime.now(),
-          endereco: enderecoCompleto,
-          foto: _foto,
+      // Salvar no armazenamento local
+      await VisitaStorage.salvarVisita(novaVisita);
+
+      // Ir para a tela de visualização
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VisualizarVisitaPage(visita: novaVisita),
         ),
-      ),
-    );
+      );
+    } finally {
+      setState(() {
+        _salvando = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _signatureController.dispose();
+    _nomePacienteController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE3F2FD), // Azul claro
       appBar: AppBar(
         title: const Text('Realizar Visita'),
-        backgroundColor: Colors.blueAccent,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ListView(
           children: [
-            const Text('Assinatura:', style: TextStyle(fontSize: 20)),
-            const SizedBox(height: 10),
+            TextField(
+              controller: _nomePacienteController,
+              decoration: const InputDecoration(
+                labelText: 'Nome do Paciente',
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Assinatura:'),
             Container(
-              color: Colors.white,
-              height: 300, // Área de assinatura maior
+              decoration: BoxDecoration(border: Border.all()),
+              height: 150,
               child: Signature(
                 controller: _signatureController,
                 backgroundColor: Colors.white,
               ),
             ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              height: 60,
-              child: ElevatedButton(
-                onPressed: () => _signatureController.clear(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  textStyle: const TextStyle(fontSize: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                ElevatedButton(
+                  onPressed: () => _signatureController.clear(),
+                  child: const Text('Limpar'),
                 ),
-                child: const Text('Limpar Assinatura'),
-              ),
+                ElevatedButton(
+                  onPressed: _tirarFoto,
+                  child: const Text('Tirar Foto (opcional)'),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 60,
-              child: ElevatedButton(
-                onPressed: _tirarFoto,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  textStyle: const TextStyle(fontSize: 20),
-                ),
-                child: const Text('Tirar Foto (opcional)'),
-              ),
-            ),
-            const SizedBox(height: 20),
-            if (_foto != null)
-              Image.memory(
-                _foto!,
-                height: 200,
-              ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 60,
-              child: ElevatedButton(
-                onPressed: _salvarVisita,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  textStyle: const TextStyle(fontSize: 22),
-                ),
-                child: const Text('Salvar Visita'),
-              ),
+            const SizedBox(height: 16),
+            _foto != null
+                ? Image.memory(_foto!, height: 150)
+                : const Text('Nenhuma foto tirada.'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _salvando ? null : _salvarVisita,
+              child: _salvando
+                  ? const CircularProgressIndicator()
+                  : const Text('Salvar Visita'),
             ),
           ],
         ),
@@ -155,4 +175,3 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
     );
   }
 }
-

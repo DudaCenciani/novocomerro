@@ -34,6 +34,9 @@ dependencies:
   geolocator: ^11.0.0
   geocoding: ^3.0.0
   image_picker: ^1.0.7
+  csv: ^5.0.2
+  open_file: ^3.3.2
+ 
   
 
 

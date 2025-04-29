@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-import 'visita_model.dart';
 import 'visita_storage.dart';
 
 class FazerObservacaoPage extends StatefulWidget {
@@ -11,64 +9,69 @@ class FazerObservacaoPage extends StatefulWidget {
 }
 
 class _FazerObservacaoPageState extends State<FazerObservacaoPage> {
-  final TextEditingController _nomeController = TextEditingController();
-  final TextEditingController _contatoController = TextEditingController();
-  final TextEditingController _observacaoController = TextEditingController();
+  final TextEditingController nomeController = TextEditingController();
+  final TextEditingController contatoController = TextEditingController();
+  final TextEditingController observacaoController = TextEditingController();
 
-  void _salvarObservacao() {
-    String nome = _nomeController.text.trim();
-    String contato = _contatoController.text.trim();
-    String observacaoTexto = _observacaoController.text.trim();
-
-    if (nome.isEmpty || contato.isEmpty || observacaoTexto.isEmpty) {
+  Future<void> _salvarObservacao() async {
+    if (nomeController.text.isEmpty || observacaoController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha todos os campos.')),
+        const SnackBar(content: Text('Preencha o nome e a observação.')),
       );
       return;
     }
 
     final observacao = Observacao(
-      nome: nome,
-      contato: contato,
-      observacao: observacaoTexto,
+      nome: nomeController.text,
+      contato: contatoController.text,
+      observacao: observacaoController.text,
       dataHora: DateTime.now(),
     );
 
-    VisitaStorage.adicionarObservacao(observacao);
+    await VisitaStorage.salvarObservacao(observacao);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Observação salva com sucesso!')),
     );
 
-    Navigator.pop(context);
+    // Limpa os campos
+    nomeController.clear();
+    contatoController.clear();
+    observacaoController.clear();
+  }
+
+  @override
+  void dispose() {
+    nomeController.dispose();
+    contatoController.dispose();
+    observacaoController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Fazer Observação'),
-      ),
-      body: SingleChildScrollView(
+      appBar: AppBar(title: const Text('Fazer Observação')),
+      body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
+        child: ListView(
           children: [
             TextField(
-              controller: _nomeController,
+              controller: nomeController,
               decoration: const InputDecoration(labelText: 'Nome'),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             TextField(
-              controller: _contatoController,
+              controller: contatoController,
               decoration: const InputDecoration(labelText: 'Meio de Contato'),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             TextField(
-              controller: _observacaoController,
+              controller: observacaoController,
               decoration: const InputDecoration(labelText: 'Observação'),
-              maxLines: 5,
+              maxLines: 4,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _salvarObservacao,
               child: const Text('Salvar Observação'),
