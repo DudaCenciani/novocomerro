@@ -1,11 +1,9 @@
+// lib/visita_storage.dart
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'visita_model.dart';
 import 'package:flutter/foundation.dart';
+import 'visita_model.dart';
 
-
-// Se tiver também o modelo de Observacao:
 class Observacao {
   final String nome;
   final String contato;
@@ -45,7 +43,6 @@ class VisitaStorage {
   static Future<void> carregarDados() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Visitas
     final visitasString = prefs.getStringList('visitas') ?? [];
     visitas = [];
     for (var v in visitasString) {
@@ -57,7 +54,6 @@ class VisitaStorage {
       }
     }
 
-    // Observações
     final obsString = prefs.getStringList('observacoes') ?? [];
     observacoes = [];
     for (var o in obsString) {

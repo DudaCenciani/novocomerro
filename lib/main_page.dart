@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'historico_page.dart'; // Tela para exibir o histórico do usuário comum
-import 'admin_page.dart'; // Tela para exibir o histórico de todos os usuários
-import 'realizar_visita_page.dart'; // Tela para realizar a visita
-import 'fazer_observacao_page.dart'; // Tela para fazer observação
+import 'historico_page.dart';
+import 'admin_page.dart';
+import 'realizar_visita_page.dart';
+import 'fazer_observacao_page.dart';
+import 'visita_storage.dart'; // necessário para limpar os dados
 
 class MainPage extends StatelessWidget {
   final bool isAdmin;
@@ -12,7 +13,7 @@ class MainPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // fundo branco bonito
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(isAdmin ? 'Menu do Administrador' : 'Menu Principal'),
         backgroundColor: Colors.blueAccent,
@@ -78,6 +79,9 @@ class MainPage extends StatelessWidget {
                   child: const Text('Ver Histórico'),
                 ),
               ),
+              const SizedBox(height: 30),
+              // 🔧 Botão temporário para limpar todos os dados
+              
             ],
           ),
         ),
@@ -85,4 +89,3 @@ class MainPage extends StatelessWidget {
     );
   }
 }
-

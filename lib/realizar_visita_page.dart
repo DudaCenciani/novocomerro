@@ -1,3 +1,4 @@
+// lib/realizar_visita_page.dart
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -54,7 +55,6 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
     });
 
     try {
-      // Localização
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -78,8 +78,19 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
       final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
       final endereco = "${placemarks.first.street}, ${placemarks.first.subLocality}, ${placemarks.first.locality}";
 
-      // Dados da visita
+      await Future.delayed(const Duration(milliseconds: 200));
+
       final assinatura = await _signatureController.toPngBytes();
+      if (assinatura == null || assinatura.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Falha ao capturar a assinatura.')),
+        );
+        setState(() {
+          _salvando = false;
+        });
+        return;
+      }
+
       final now = DateTime.now();
       final prefs = await SharedPreferences.getInstance();
       final agenteSaude = prefs.getString('usuario') ?? 'Agente Desconhecido';
@@ -91,14 +102,12 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
         latitude: position.latitude,
         longitude: position.longitude,
         dataHora: now,
-        assinatura: assinatura!,
+        assinatura: assinatura,
         foto: _foto,
       );
 
-      // Salvar no armazenamento local
       await VisitaStorage.salvarVisita(novaVisita);
 
-      // Ir para a tela de visualização
       Navigator.push(
         context,
         MaterialPageRoute(

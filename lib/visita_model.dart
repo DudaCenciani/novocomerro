@@ -1,4 +1,6 @@
+// lib/visita_model.dart
 import 'dart:typed_data';
+import 'dart:convert';
 
 class Visita {
   final String agenteSaude;
@@ -29,8 +31,8 @@ class Visita {
       'latitude': latitude,
       'longitude': longitude,
       'dataHora': dataHora.toIso8601String(),
-      'assinatura': assinatura,
-      'foto': foto,
+      'assinatura': base64Encode(assinatura),
+      'foto': foto != null ? base64Encode(foto!) : null,
     };
   }
 
@@ -42,10 +44,8 @@ class Visita {
       latitude: map['latitude'],
       longitude: map['longitude'],
       dataHora: DateTime.parse(map['dataHora']),
-      assinatura: Uint8List.fromList(List<int>.from(map['assinatura'])),
-      foto: map['foto'] != null
-          ? Uint8List.fromList(List<int>.from(map['foto']))
-          : null,
+      assinatura: base64Decode(map['assinatura']),
+      foto: map['foto'] != null ? base64Decode(map['foto']) : null,
     );
   }
 }
