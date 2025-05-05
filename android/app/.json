@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "269927449339",
+    "project_id": "coleta-assinaturas",
+    "storage_bucket": "coleta-assinaturas.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:269927449339:android:bf35f630b99cc5b763665e",
+        "android_client_info": {
+          "package_name": "com.example.coleta_assinaturas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDBI2RE_rPFimS5fXyniSmd67T1oV0AT9Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

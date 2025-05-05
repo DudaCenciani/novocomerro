@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'login_page.dart'; // Tela de login
-import 'visita_storage.dart'; // Classe que carrega visitas e observações
-
-
+import 'package:firebase_core/firebase_core.dart'; // Adicione esta linha
+import 'login_page.dart';
+import 'visita_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-   // Necessário para usar 'await' antes de runApp
-  await VisitaStorage.carregarDados();       // Agora seguro com tratamento de erros
+  await Firebase.initializeApp(); // Inicializa o Firebase
   runApp(const MyApp());
 }
 
@@ -22,7 +20,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const LoginPage(), // Tela inicial do app
+      home: const LoginPage(),
       debugShowCheckedModeBanner: false,
     );
   }

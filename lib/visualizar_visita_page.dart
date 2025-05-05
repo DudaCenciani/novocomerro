@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'visita_model.dart';
@@ -44,8 +45,13 @@ class VisualizarVisitaPage extends StatelessWidget {
               height: 150,
               decoration: BoxDecoration(border: Border.all()),
               child: visita.assinatura.isNotEmpty
-                  ? Image.memory(visita.assinatura)
-                  : const Center(child: Text('Assinatura não disponível.')),
+                  ? Image.memory(
+                      visita.assinatura,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Center(child: Text('Erro ao exibir assinatura.')),
+                    )
+                  : const Center(child: Text('Assinatura vazia.')),
             ),
           ],
         ),

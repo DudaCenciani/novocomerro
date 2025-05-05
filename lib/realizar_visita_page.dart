@@ -1,5 +1,7 @@
-// lib/realizar_visita_page.dart
+// ✅ lib/realizar_visita_page.dart
 import 'dart:typed_data';
+import 'dart:convert';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
@@ -26,7 +28,6 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
   Future<void> _tirarFoto() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.camera);
-
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
       setState(() {
@@ -78,10 +79,38 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
       final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
       final endereco = "${placemarks.first.street}, ${placemarks.first.subLocality}, ${placemarks.first.locality}";
 
-      await Future.delayed(const Duration(milliseconds: 200));
+      await Future.delayed(const Duration(milliseconds: 100));
+      _signatureController.notifyListeners();
+      await Future.delayed(const Duration(milliseconds: 400));
 
-      final assinatura = await _signatureController.toPngBytes();
-      if (assinatura == null || assinatura.isEmpty) {
+      final image = await _signatureController.toImage();
+if (image == null) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Falha ao capturar a assinatura (imagem nula).')),
+  );
+  setState(() {
+    _salvando = false;
+  });
+  return;
+}
+
+final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+final assinaturaBytes = byteData?.buffer.asUint8List();
+
+if (assinaturaBytes == null || assinaturaBytes.isEmpty) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Falha ao gerar os bytes da assinatura.')),
+  );
+  setState(() {
+    _salvando = false;
+  });
+  return;
+}
+
+      
+      print('🖋️ Assinatura bytes length: ${assinaturaBytes?.length}');
+
+      if (assinaturaBytes == null || assinaturaBytes.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Falha ao capturar a assinatura.')),
         );
@@ -91,7 +120,6 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
         return;
       }
 
-      final now = DateTime.now();
       final prefs = await SharedPreferences.getInstance();
       final agenteSaude = prefs.getString('usuario') ?? 'Agente Desconhecido';
 
@@ -101,9 +129,9 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
         endereco: endereco,
         latitude: position.latitude,
         longitude: position.longitude,
-        dataHora: now,
-        assinatura: assinatura,
-        foto: _foto,
+        dataHora: DateTime.now(),
+        assinaturaBase64: base64Encode(assinaturaBytes),
+        fotoBase64: _foto != null ? base64Encode(_foto!) : null,
       );
 
       await VisitaStorage.salvarVisita(novaVisita);
@@ -184,3 +212,4 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
     );
   }
 }
+

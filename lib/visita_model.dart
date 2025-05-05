@@ -1,6 +1,6 @@
-// lib/visita_model.dart
-import 'dart:typed_data';
+// ✅ lib/visita_model.dart
 import 'dart:convert';
+import 'dart:typed_data';
 
 class Visita {
   final String agenteSaude;
@@ -9,8 +9,8 @@ class Visita {
   final double latitude;
   final double longitude;
   final DateTime dataHora;
-  final Uint8List assinatura;
-  final Uint8List? foto;
+  final String assinaturaBase64;
+  final String? fotoBase64;
 
   Visita({
     required this.agenteSaude,
@@ -19,33 +19,37 @@ class Visita {
     required this.latitude,
     required this.longitude,
     required this.dataHora,
-    required this.assinatura,
-    this.foto,
+    required this.assinaturaBase64,
+    this.fotoBase64,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'agenteSaude': agenteSaude,
-      'nomePaciente': nomePaciente,
-      'endereco': endereco,
-      'latitude': latitude,
-      'longitude': longitude,
-      'dataHora': dataHora.toIso8601String(),
-      'assinatura': base64Encode(assinatura),
-      'foto': foto != null ? base64Encode(foto!) : null,
-    };
+  Map<String, dynamic> toMap() => {
+    'agenteSaude': agenteSaude,
+    'nomePaciente': nomePaciente,
+    'endereco': endereco,
+    'latitude': latitude,
+    'longitude': longitude,
+    'dataHora': dataHora.toIso8601String(),
+    'assinaturaBase64': assinaturaBase64,
+    'fotoBase64': fotoBase64,
+  };
+
+  factory Visita.fromMap(Map<String, dynamic> map) => Visita(
+    agenteSaude: map['agenteSaude'],
+    nomePaciente: map['nomePaciente'],
+    endereco: map['endereco'],
+    latitude: map['latitude'],
+    longitude: map['longitude'],
+    dataHora: DateTime.parse(map['dataHora']),
+    assinaturaBase64: map['assinaturaBase64'],
+    fotoBase64: map['fotoBase64'],
+  );
+
+  Uint8List get assinatura {
+    final bytes = base64Decode(assinaturaBase64);
+    print('🔍 Decodificando assinatura: ${bytes.length} bytes');
+    return bytes;
   }
 
-  factory Visita.fromMap(Map<String, dynamic> map) {
-    return Visita(
-      agenteSaude: map['agenteSaude'],
-      nomePaciente: map['nomePaciente'],
-      endereco: map['endereco'],
-      latitude: map['latitude'],
-      longitude: map['longitude'],
-      dataHora: DateTime.parse(map['dataHora']),
-      assinatura: base64Decode(map['assinatura']),
-      foto: map['foto'] != null ? base64Decode(map['foto']) : null,
-    );
-  }
+  Uint8List? get foto => fotoBase64 != null ? base64Decode(fotoBase64!) : null;
 }
