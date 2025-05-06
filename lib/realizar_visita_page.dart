@@ -124,24 +124,25 @@ if (assinaturaBytes == null || assinaturaBytes.isEmpty) {
       final agenteSaude = prefs.getString('usuario') ?? 'Agente Desconhecido';
 
       final novaVisita = Visita(
-        agenteSaude: agenteSaude,
-        nomePaciente: _nomePacienteController.text,
-        endereco: endereco,
-        latitude: position.latitude,
-        longitude: position.longitude,
-        dataHora: DateTime.now(),
-        assinaturaBase64: base64Encode(assinaturaBytes),
-        fotoBase64: _foto != null ? base64Encode(_foto!) : null,
-      );
+  agenteSaude: agenteSaude,
+  nomePaciente: _nomePacienteController.text,
+  endereco: endereco,
+  latitude: position.latitude,
+  longitude: position.longitude,
+  dataHora: DateTime.now(),
+  assinaturaBase64: base64Encode(assinaturaBytes),
+  fotoBase64: _foto != null ? base64Encode(_foto!) : null,
+);
 
-      await VisitaStorage.salvarVisita(novaVisita);
+await VisitaStorage.salvarVisita(novaVisita);
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VisualizarVisitaPage(visita: novaVisita),
-        ),
-      );
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => VisualizarVisitaPage(visita: novaVisita),
+  ),
+);
+
     } finally {
       setState(() {
         _salvando = false;

@@ -1,4 +1,3 @@
-// ✅ lib/visita_model.dart
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -45,11 +44,7 @@ class Visita {
     fotoBase64: map['fotoBase64'],
   );
 
-  Uint8List get assinatura {
-    final bytes = base64Decode(assinaturaBase64);
-    print('🔍 Decodificando assinatura: ${bytes.length} bytes');
-    return bytes;
-  }
+  Uint8List get assinatura => base64Decode(assinaturaBase64);
 
   Uint8List? get foto => fotoBase64 != null ? base64Decode(fotoBase64!) : null;
 }

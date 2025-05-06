@@ -1,7 +1,7 @@
-// lib/visita_storage.dart
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'visita_model.dart';
 
 class Observacao {
@@ -17,23 +17,19 @@ class Observacao {
     required this.dataHora,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'nome': nome,
-      'contato': contato,
-      'observacao': observacao,
-      'dataHora': dataHora.toIso8601String(),
-    };
-  }
+  Map<String, dynamic> toMap() => {
+    'nome': nome,
+    'contato': contato,
+    'observacao': observacao,
+    'dataHora': dataHora.toIso8601String(),
+  };
 
-  factory Observacao.fromMap(Map<String, dynamic> map) {
-    return Observacao(
-      nome: map['nome'] ?? '',
-      contato: map['contato'] ?? '',
-      observacao: map['observacao'] ?? '',
-      dataHora: DateTime.tryParse(map['dataHora'] ?? '') ?? DateTime.now(),
-    );
-  }
+  factory Observacao.fromMap(Map<String, dynamic> map) => Observacao(
+    nome: map['nome'] ?? '',
+    contato: map['contato'] ?? '',
+    observacao: map['observacao'] ?? '',
+    dataHora: DateTime.tryParse(map['dataHora'] ?? '') ?? DateTime.now(),
+  );
 }
 
 class VisitaStorage {
@@ -42,28 +38,11 @@ class VisitaStorage {
 
   static Future<void> carregarDados() async {
     final prefs = await SharedPreferences.getInstance();
-
     final visitasString = prefs.getStringList('visitas') ?? [];
-    visitas = [];
-    for (var v in visitasString) {
-      try {
-        final map = json.decode(v);
-        visitas.add(Visita.fromMap(map));
-      } catch (e) {
-        debugPrint('Erro ao carregar uma visita: $e');
-      }
-    }
+    visitas = visitasString.map((v) => Visita.fromMap(json.decode(v))).toList();
 
     final obsString = prefs.getStringList('observacoes') ?? [];
-    observacoes = [];
-    for (var o in obsString) {
-      try {
-        final map = json.decode(o);
-        observacoes.add(Observacao.fromMap(map));
-      } catch (e) {
-        debugPrint('Erro ao carregar uma observação: $e');
-      }
-    }
+    observacoes = obsString.map((o) => Observacao.fromMap(json.decode(o))).toList();
   }
 
   static Future<void> salvarVisita(Visita visita) async {
@@ -71,6 +50,8 @@ class VisitaStorage {
     visitas.add(visita);
     final visitasMapeadas = visitas.map((v) => json.encode(v.toMap())).toList();
     await prefs.setStringList('visitas', visitasMapeadas);
+
+    await FirebaseFirestore.instance.collection('visitas').add(visita.toMap());
   }
 
   static Future<void> salvarObservacao(Observacao obs) async {
@@ -78,6 +59,8 @@ class VisitaStorage {
     observacoes.add(obs);
     final obsMapeadas = observacoes.map((o) => json.encode(o.toMap())).toList();
     await prefs.setStringList('observacoes', obsMapeadas);
+
+    await FirebaseFirestore.instance.collection('observacoes').add(obs.toMap());
   }
 
   static Future<void> limparTudo() async {
