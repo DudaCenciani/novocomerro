@@ -8,6 +8,8 @@ import 'visita_model.dart';
 import 'detalhes_visita_page.dart';
 import 'login_page.dart';
 import 'exportar_visitas.dart';
+import 'sincronizacao_service.dart';
+import 'sincronizacao_observacoes.dart';
 
 class HistoricoPage extends StatefulWidget {
   const HistoricoPage({super.key});
@@ -21,18 +23,25 @@ class _HistoricoPageState extends State<HistoricoPage> {
   DateTime? _dataSelecionada;
   String _usuarioLogado = '';
 
-  @override
-  void initState() {
-    super.initState();
-    _carregarUsuario();
-  }
+ @override
+void initState() {
+  super.initState();
+  _carregarUsuario();
+  _carregarDadosLocais();
+}
 
-  Future<void> _carregarUsuario() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _usuarioLogado = prefs.getString('usuario') ?? '';
-    });
-  }
+Future<void> _carregarUsuario() async {
+  final prefs = await SharedPreferences.getInstance();
+  setState(() {
+    _usuarioLogado = prefs.getString('usuario') ?? '';
+  });
+}
+
+Future<void> _carregarDadosLocais() async {
+  await VisitaStorage.carregarDados();
+  setState(() {});
+}
+
 
   Future<void> _logout() async {
     Navigator.pushAndRemoveUntil(
@@ -88,6 +97,18 @@ class _HistoricoPageState extends State<HistoricoPage> {
         appBar: AppBar(
           title: const Text('Histórico'),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.sync),
+              tooltip: 'Sincronizar Dados',
+              onPressed: () async {
+                await sincronizarVisitasOffline();
+                await sincronizarObservacoesOffline();
+                setState(() {});
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Dados sincronizados com sucesso.')),
+                );
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.file_download),
               tooltip: 'Exportar Histórico',

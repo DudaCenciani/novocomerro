@@ -10,6 +10,7 @@ class Visita {
   final DateTime dataHora;
   final String assinaturaBase64;
   final String? fotoBase64;
+  bool sincronizada;
 
   Visita({
     required this.agenteSaude,
@@ -20,29 +21,38 @@ class Visita {
     required this.dataHora,
     required this.assinaturaBase64,
     this.fotoBase64,
+    this.sincronizada = false,
   });
 
-  Map<String, dynamic> toMap() => {
-    'agenteSaude': agenteSaude,
-    'nomePaciente': nomePaciente,
-    'endereco': endereco,
-    'latitude': latitude,
-    'longitude': longitude,
-    'dataHora': dataHora.toIso8601String(),
-    'assinaturaBase64': assinaturaBase64,
-    'fotoBase64': fotoBase64,
-  };
+  Map<String, dynamic> toMap() {
+    final fotoValida = fotoBase64 != null && fotoBase64!.length < 1048487;
 
-  factory Visita.fromMap(Map<String, dynamic> map) => Visita(
-    agenteSaude: map['agenteSaude'],
-    nomePaciente: map['nomePaciente'],
-    endereco: map['endereco'],
-    latitude: map['latitude'],
-    longitude: map['longitude'],
-    dataHora: DateTime.parse(map['dataHora']),
-    assinaturaBase64: map['assinaturaBase64'],
-    fotoBase64: map['fotoBase64'],
-  );
+    return {
+      'agenteSaude': agenteSaude,
+      'nomePaciente': nomePaciente,
+      'endereco': endereco,
+      'latitude': latitude,
+      'longitude': longitude,
+      'dataHora': dataHora.toIso8601String(),
+      'assinaturaBase64': assinaturaBase64,
+      if (fotoValida) 'fotoBase64': fotoBase64,
+      'sincronizada': sincronizada,
+    };
+  }
+
+  factory Visita.fromMap(Map<String, dynamic> map) {
+    return Visita(
+      agenteSaude: map['agenteSaude'],
+      nomePaciente: map['nomePaciente'],
+      endereco: map['endereco'],
+      latitude: map['latitude'],
+      longitude: map['longitude'],
+      dataHora: DateTime.parse(map['dataHora']),
+      assinaturaBase64: map['assinaturaBase64'],
+      fotoBase64: map['fotoBase64'],
+      sincronizada: map['sincronizada'] ?? false,
+    );
+  }
 
   Uint8List get assinatura => base64Decode(assinaturaBase64);
 

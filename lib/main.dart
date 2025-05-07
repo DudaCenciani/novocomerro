@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // Adicione esta linha
+import 'package:firebase_core/firebase_core.dart';
 import 'login_page.dart';
-import 'visita_storage.dart';
+import 'visita_storage.dart'; // Para carregar dados locais
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // Inicializa o Firebase
+
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('⚠️ Firebase não pôde ser inicializado: $e');
+    // Continua normalmente com suporte apenas offline
+  }
+
+  // Carrega os dados locais (visitas e observações salvas)
+  await VisitaStorage.carregarDados();
+
   runApp(const MyApp());
 }
 

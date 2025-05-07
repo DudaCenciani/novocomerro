@@ -38,6 +38,12 @@ dependencies:
   open_file: ^3.3.2
   cloud_firestore: ^4.17.5
   firebase_core: ^2.25.4
+  connectivity_plus: ^5.0.2
+  flutter_image_compress: ^2.1.0
+  firebase_storage: ^11.6.4
+  firebase_auth: ^4.7.2
+  
+
 
  
   

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'main_page.dart'; // ou LoginPage, dependendo da navegação que deseja
 
 class CadastroPage extends StatefulWidget {
   const CadastroPage({super.key});
@@ -11,58 +13,137 @@ class CadastroPage extends StatefulWidget {
 class _CadastroPageState extends State<CadastroPage> {
   final _usuarioController = TextEditingController();
   final _senhaController = TextEditingController();
-  String? _errorMessage;
+  final _telefoneController = TextEditingController();
+  final _codigoController = TextEditingController();
 
-  // Função para salvar o novo usuário
-  Future<void> _cadastrarUsuario() async {
+  String? _errorMessage;
+  String? _verificacaoId;
+  bool _codigoEnviado = false;
+  bool _carregando = false;
+
+  Future<void> _enviarCodigoSMS() async {
+    final telefone = _telefoneController.text.trim();
+
+    if (telefone.isEmpty || !telefone.startsWith('+')) {
+      setState(() => _errorMessage = 'Inclua o número com DDI (ex: +55...)');
+      return;
+    }
+
+    setState(() {
+      _carregando = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: telefone,
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: (PhoneAuthCredential cred) async {
+          await FirebaseAuth.instance.signInWithCredential(cred);
+          _salvarLocalmente();
+        },
+        verificationFailed: (e) {
+          setState(() {
+            _errorMessage = 'Erro ao enviar código: ${e.message}';
+            _carregando = false;
+          });
+        },
+        codeSent: (verificacaoId, resendToken) {
+          setState(() {
+            _verificacaoId = verificacaoId;
+            _codigoEnviado = true;
+            _carregando = false;
+          });
+        },
+        codeAutoRetrievalTimeout: (verificacaoId) {
+          _verificacaoId = verificacaoId;
+        },
+      );
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Erro inesperado: $e';
+        _carregando = false;
+      });
+    }
+  }
+
+  Future<void> _verificarCodigoESalvar() async {
+    final codigo = _codigoController.text.trim();
     final usuario = _usuarioController.text.trim();
     final senha = _senhaController.text.trim();
 
-    if (usuario.isNotEmpty && senha.isNotEmpty) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('usuario', usuario);
-      await prefs.setString('senha', senha);
-
-      // Após salvar, redireciona para a tela de login
-      Navigator.pop(context);
-    } else {
-      setState(() {
-        _errorMessage = 'Por favor, preencha todos os campos!';
-      });
+    if (usuario.isEmpty || senha.isEmpty || codigo.isEmpty || _verificacaoId == null) {
+      setState(() => _errorMessage = 'Preencha todos os campos!');
+      return;
     }
+
+    try {
+      final cred = PhoneAuthProvider.credential(
+        verificationId: _verificacaoId!,
+        smsCode: codigo,
+      );
+
+      await FirebaseAuth.instance.signInWithCredential(cred);
+      await _salvarLocalmente();
+    } catch (e) {
+      setState(() => _errorMessage = 'Código inválido ou expirado.');
+    }
+  }
+
+  Future<void> _salvarLocalmente() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('usuario', _usuarioController.text.trim());
+    await prefs.setString('senha', _senhaController.text.trim());
+
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const MainPage(isAdmin: false)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Cadastro de Usuário')),
+      appBar: AppBar(title: const Text('Cadastro com Verificação')),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.all(16),
+        child: ListView(
           children: [
             TextField(
               controller: _usuarioController,
-              decoration: const InputDecoration(labelText: 'Usuário'),
+              decoration: const InputDecoration(labelText: 'Nome de usuário'),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             TextField(
               controller: _senhaController,
-              obscureText: true,
               decoration: const InputDecoration(labelText: 'Senha'),
+              obscureText: true,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _telefoneController,
+              decoration: const InputDecoration(labelText: 'Celular com DDI (ex: +55...)'),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 12),
+            if (_codigoEnviado)
+              TextField(
+                controller: _codigoController,
+                decoration: const InputDecoration(labelText: 'Código SMS'),
+                keyboardType: TextInputType.number,
+              ),
+            const SizedBox(height: 12),
             ElevatedButton(
-              onPressed: _cadastrarUsuario,
-              child: const Text('Cadastrar'),
+              onPressed: _codigoEnviado ? _verificarCodigoESalvar : _enviarCodigoSMS,
+              child: _carregando
+                  ? const CircularProgressIndicator()
+                  : Text(_codigoEnviado ? 'Verificar e Cadastrar' : 'Enviar Código'),
             ),
             if (_errorMessage != null)
               Padding(
                 padding: const EdgeInsets.only(top: 10),
-                child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.red),
-                ),
+                child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
               ),
           ],
         ),

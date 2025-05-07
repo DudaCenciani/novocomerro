@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "1077801211059",
+    "firebase_url": "https://coleta-ccdf9-default-rtdb.firebaseio.com",
     "project_id": "coleta-ccdf9",
     "storage_bucket": "coleta-ccdf9.firebasestorage.app"
   },

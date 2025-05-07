@@ -1,7 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'visita_model.dart';
+import 'main_page.dart'; // Importante para voltar à tela principal
 
 class VisualizarVisitaPage extends StatelessWidget {
   final Visita visita;
@@ -52,6 +52,23 @@ class VisualizarVisitaPage extends StatelessWidget {
                           const Center(child: Text('Erro ao exibir assinatura.')),
                     )
                   : const Center(child: Text('Assinatura vazia.')),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.check),
+              label: const Text('Confirmar e Voltar ao Menu'),
+              onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MainPage(isAdmin: false)),
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                textStyle: const TextStyle(fontSize: 18),
+              ),
             ),
           ],
         ),
