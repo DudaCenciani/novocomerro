@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'main_page.dart'; // ou LoginPage, dependendo da navegação que deseja
+import 'main_page.dart';
 
 class CadastroPage extends StatefulWidget {
   const CadastroPage({super.key});
@@ -40,24 +40,25 @@ class _CadastroPageState extends State<CadastroPage> {
         timeout: const Duration(seconds: 60),
         verificationCompleted: (PhoneAuthCredential cred) async {
           await FirebaseAuth.instance.signInWithCredential(cred);
-          _salvarLocalmente();
+          await _salvarLocalmente();
         },
-        verificationFailed: (e) {
+        verificationFailed: (FirebaseAuthException e) {
           setState(() {
             _errorMessage = 'Erro ao enviar código: ${e.message}';
             _carregando = false;
           });
         },
-        codeSent: (verificacaoId, resendToken) {
+        codeSent: (String verificacaoId, int? resendToken) {
           setState(() {
             _verificacaoId = verificacaoId;
             _codigoEnviado = true;
             _carregando = false;
           });
         },
-        codeAutoRetrievalTimeout: (verificacaoId) {
+        codeAutoRetrievalTimeout: (String verificacaoId) {
           _verificacaoId = verificacaoId;
         },
+        
       );
     } catch (e) {
       setState(() {
@@ -135,11 +136,20 @@ class _CadastroPageState extends State<CadastroPage> {
               ),
             const SizedBox(height: 12),
             ElevatedButton(
-              onPressed: _codigoEnviado ? _verificarCodigoESalvar : _enviarCodigoSMS,
+              onPressed: _carregando
+                  ? null
+                  : _codigoEnviado
+                      ? _verificarCodigoESalvar
+                      : _enviarCodigoSMS,
               child: _carregando
                   ? const CircularProgressIndicator()
                   : Text(_codigoEnviado ? 'Verificar e Cadastrar' : 'Enviar Código'),
             ),
+            if (_codigoEnviado)
+              TextButton(
+                onPressed: _enviarCodigoSMS,
+                child: const Text('Reenviar código'),
+              ),
             if (_errorMessage != null)
               Padding(
                 padding: const EdgeInsets.only(top: 10),
