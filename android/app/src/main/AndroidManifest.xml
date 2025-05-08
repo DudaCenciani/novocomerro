@@ -9,7 +9,8 @@
 
 
     <application
-        android:label="coleta_assinaturas_novo"
+    android:label="Bela Saúde"
+
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
