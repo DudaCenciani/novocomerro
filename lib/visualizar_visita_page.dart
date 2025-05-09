@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'visita_model.dart';
-import 'main_page.dart'; // Importante para voltar à tela principal
+import 'main_page.dart';
 
 class VisualizarVisitaPage extends StatelessWidget {
   final Visita visita;
@@ -14,6 +14,9 @@ class VisualizarVisitaPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasFoto = visita.foto != null && visita.foto!.isNotEmpty;
+    final hasAssinatura = visita.assinatura.isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalhes da Visita'),
@@ -35,7 +38,7 @@ class VisualizarVisitaPage extends StatelessWidget {
             const SizedBox(height: 16),
             const Text('Foto:', style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
-            visita.foto != null
+            hasFoto
                 ? Image.memory(visita.foto!, height: 200)
                 : const Text('Sem foto registrada.'),
             const SizedBox(height: 16),
@@ -44,7 +47,7 @@ class VisualizarVisitaPage extends StatelessWidget {
             Container(
               height: 150,
               decoration: BoxDecoration(border: Border.all()),
-              child: visita.assinatura.isNotEmpty
+              child: hasAssinatura
                   ? Image.memory(
                       visita.assinatura,
                       fit: BoxFit.contain,

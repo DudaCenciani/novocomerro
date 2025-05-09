@@ -142,7 +142,17 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
 
       print('🔹 Recuperando agente de saúde...');
       final prefs = await SharedPreferences.getInstance();
-      final agenteSaude = prefs.getString('usuario') ?? 'Agente Desconhecido';
+final agenteSalvo = prefs.getString('usuario');
+
+if (agenteSalvo == null || agenteSalvo.isEmpty) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Erro: usuário não encontrado. Faça login novamente.')),
+  );
+  setState(() => _salvando = false);
+  return;
+}
+
+final agenteSaude = agenteSalvo;
 
       print('🔹 Criando objeto Visita...');
       final novaVisita = Visita(

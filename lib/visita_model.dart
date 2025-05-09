@@ -25,7 +25,7 @@ class Visita {
   });
 
   Map<String, dynamic> toMap() {
-    final fotoValida = fotoBase64 != null && fotoBase64!.length < 1048487;
+    final fotoValida = fotoBase64 != null && fotoBase64!.isNotEmpty && fotoBase64!.length < 1048487;
 
     return {
       'agenteSaude': agenteSaude,
@@ -41,20 +41,43 @@ class Visita {
   }
 
   factory Visita.fromMap(Map<String, dynamic> map) {
+    if (map['agenteSaude'] == null ||
+        map['nomePaciente'] == null ||
+        map['endereco'] == null ||
+        map['latitude'] == null ||
+        map['longitude'] == null ||
+        map['dataHora'] == null ||
+        map['assinaturaBase64'] == null) {
+      throw ArgumentError('Campos obrigatórios ausentes no map da Visita');
+    }
+
     return Visita(
-      agenteSaude: map['agenteSaude'],
-      nomePaciente: map['nomePaciente'],
-      endereco: map['endereco'],
-      latitude: map['latitude'],
-      longitude: map['longitude'],
+      agenteSaude: map['agenteSaude'] as String,
+      nomePaciente: map['nomePaciente'] as String,
+      endereco: map['endereco'] as String,
+      latitude: map['latitude'].toDouble(),
+      longitude: map['longitude'].toDouble(),
       dataHora: DateTime.parse(map['dataHora']),
-      assinaturaBase64: map['assinaturaBase64'],
-      fotoBase64: map['fotoBase64'],
+      assinaturaBase64: map['assinaturaBase64'] as String,
+      fotoBase64: map['fotoBase64'] as String?,
       sincronizada: map['sincronizada'] ?? false,
     );
   }
 
-  Uint8List get assinatura => base64Decode(assinaturaBase64);
+  Uint8List get assinatura {
+    try {
+      return base64Decode(assinaturaBase64);
+    } catch (_) {
+      return Uint8List(0);
+    }
+  }
 
-  Uint8List? get foto => fotoBase64 != null ? base64Decode(fotoBase64!) : null;
+  Uint8List? get foto {
+    if (fotoBase64 == null || fotoBase64!.isEmpty) return null;
+    try {
+      return base64Decode(fotoBase64!);
+    } catch (_) {
+      return null;
+    }
+  }
 }

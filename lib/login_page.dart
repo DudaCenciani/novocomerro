@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main_page.dart';
 import 'cadastro_page.dart';
+import 'esqueci_senha_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -87,11 +88,23 @@ class _LoginPageState extends State<LoginPage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const CadastroPage()),
+                  MaterialPageRoute(builder: (_) => const CadastroPage()),
                 );
               },
               child: const Text(
                 'Não tem uma conta? Cadastre-se',
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const EsqueciSenhaPage()),
+                );
+              },
+              child: const Text(
+                'Esqueci minha senha',
                 style: TextStyle(fontSize: 16),
               ),
             ),

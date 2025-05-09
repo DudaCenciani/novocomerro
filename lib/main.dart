@@ -3,7 +3,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 
 import 'login_page.dart';
-import 'visita_storage.dart'; // Para carregar dados locais
+import 'cadastro_page.dart';
+import 'esqueci_senha_page.dart';
+import 'main_page.dart';
+import 'visita_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,19 +14,12 @@ void main() async {
   try {
     await Firebase.initializeApp();
 
-    // ⚠️ Temporariamente troque para debug para gerar o token
     await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.playIntegrity,
- // ALTERADO TEMPORARIAMENTE
-      webProvider: ReCaptchaV3Provider(''), // não usamos Web
+      androidProvider: AndroidProvider.debug, // Trocar para playIntegrity ao publicar
+     webProvider: ReCaptchaV3Provider('')  // Não usamos web
     );
-
-    // ✅ Gera o token de depuração e exibe no console
-  
-
   } catch (e) {
     debugPrint('⚠️ Firebase não pôde ser inicializado: $e');
-    // Continua normalmente com suporte apenas offline
   }
 
   await VisitaStorage.carregarDados();
@@ -37,13 +33,30 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'App Visita',
+      title: 'Bela Saúde',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+        scaffoldBackgroundColor: const Color(0xFFF2F2F2),
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueAccent,
+            minimumSize: const Size(double.infinity, 48),
+          ),
+        ),
       ),
-      home: const LoginPage(),
       debugShowCheckedModeBanner: false,
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const LoginPage(),
+        '/cadastro': (context) => const CadastroPage(),
+        '/esqueci-senha': (context) => const EsqueciSenhaPage(),
+        '/main': (context) => const MainPage(isAdmin: false), // usado apenas se necessário
+      },
     );
   }
 }

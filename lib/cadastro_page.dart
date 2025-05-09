@@ -21,6 +21,9 @@ class _CadastroPageState extends State<CadastroPage> {
   bool _codigoEnviado = false;
   bool _carregando = false;
 
+  final String numeroTeste = '+5511999999999';
+  final String codigoTeste = '123456';
+
   Future<void> _enviarCodigoSMS() async {
     final telefone = _telefoneController.text.trim();
 
@@ -53,12 +56,15 @@ class _CadastroPageState extends State<CadastroPage> {
             _verificacaoId = verificacaoId;
             _codigoEnviado = true;
             _carregando = false;
+
+            if (telefone == numeroTeste) {
+              _codigoController.text = codigoTeste;
+            }
           });
         },
         codeAutoRetrievalTimeout: (String verificacaoId) {
           _verificacaoId = verificacaoId;
         },
-        
       );
     } catch (e) {
       setState(() {
@@ -79,6 +85,12 @@ class _CadastroPageState extends State<CadastroPage> {
     }
 
     try {
+      // Se for número de teste, ignora autenticação real e só salva local
+      if (_telefoneController.text.trim() == numeroTeste && codigo == codigoTeste) {
+        await _salvarLocalmente();
+        return;
+      }
+
       final cred = PhoneAuthProvider.credential(
         verificationId: _verificacaoId!,
         smsCode: codigo,
