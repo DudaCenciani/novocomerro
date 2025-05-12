@@ -20,6 +20,7 @@ class _CadastroPageState extends State<CadastroPage> {
   String? _verificacaoId;
   bool _codigoEnviado = false;
   bool _carregando = false;
+  String _papelSelecionado = 'agente';
 
   final String numeroTeste = '+5511999999999';
   final String codigoTeste = '123456';
@@ -85,7 +86,6 @@ class _CadastroPageState extends State<CadastroPage> {
     }
 
     try {
-      // Se for número de teste, ignora autenticação real e só salva local
       if (_telefoneController.text.trim() == numeroTeste && codigo == codigoTeste) {
         await _salvarLocalmente();
         return;
@@ -107,11 +107,12 @@ class _CadastroPageState extends State<CadastroPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('usuario', _usuarioController.text.trim());
     await prefs.setString('senha', _senhaController.text.trim());
+    await prefs.setString('role', _papelSelecionado);
 
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const MainPage(isAdmin: false)),
+      MaterialPageRoute(builder: (context) => MainPage(isAdmin: _papelSelecionado == 'admin')),
     );
   }
 
@@ -132,6 +133,20 @@ class _CadastroPageState extends State<CadastroPage> {
               controller: _senhaController,
               decoration: const InputDecoration(labelText: 'Senha'),
               obscureText: true,
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: _papelSelecionado,
+              decoration: const InputDecoration(labelText: 'Função'),
+              items: const [
+                DropdownMenuItem(value: 'agente', child: Text('Agente de Saúde')),
+                DropdownMenuItem(value: 'admin', child: Text('Administrador')),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _papelSelecionado = value ?? 'agente';
+                });
+              },
             ),
             const SizedBox(height: 12),
             TextField(

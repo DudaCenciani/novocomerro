@@ -21,18 +21,15 @@ class _LoginPageState extends State<LoginPage> {
     final senha = _senhaController.text.trim();
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? usuarioSalvo = prefs.getString('usuario');
-    String? senhaSalva = prefs.getString('senha');
+    final usuarioSalvo = prefs.getString('usuario');
+    final senhaSalva = prefs.getString('senha');
+    final roleSalvo = prefs.getString('role') ?? 'agente';
 
     if (usuario == usuarioSalvo && senha == senhaSalva) {
+      final isAdmin = roleSalvo == 'admin';
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainPage(isAdmin: false)),
-      );
-    } else if (usuario == 'admin' && senha == 'admin123') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainPage(isAdmin: true)),
+        MaterialPageRoute(builder: (context) => MainPage(isAdmin: isAdmin)),
       );
     } else {
       setState(() {

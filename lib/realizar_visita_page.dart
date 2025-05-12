@@ -93,10 +93,12 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
         }
       }
 
-      print('🔹 Obtendo posição GPS...');
-      final position = await Geolocator.getCurrentPosition();
+      print('🔹 Obtendo posição GPS com alta precisão...');
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
 
-      print('🔹 Tentando obter endereço...');
+      print('🔹 Tentando obter endereço (pode falhar offline)...');
       String endereco = 'Endereço não disponível';
       try {
         final placemarks = await placemarkFromCoordinates(
@@ -108,7 +110,7 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
           endereco = "${place.street}, ${place.subLocality}, ${place.locality}";
         }
       } catch (e) {
-        print('⚠️ Erro ao obter endereço: $e');
+        print('⚠️ Falha ao obter endereço: $e');
       }
 
       await Future.delayed(const Duration(milliseconds: 100));
@@ -119,11 +121,9 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
       final image = await _signatureController.toImage();
       if (image == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Falha ao capturar a assinatura (imagem nula).')),
+          const SnackBar(content: Text('Falha ao capturar a assinatura.')),
         );
-        setState(() {
-          _salvando = false;
-        });
+        setState(() => _salvando = false);
         return;
       }
 
@@ -132,31 +132,27 @@ class _RealizarVisitaPageState extends State<RealizarVisitaPage> {
 
       if (assinaturaBytes == null || assinaturaBytes.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Falha ao gerar os bytes da assinatura.')),
+          const SnackBar(content: Text('Erro ao processar a assinatura.')),
         );
-        setState(() {
-          _salvando = false;
-        });
+        setState(() => _salvando = false);
         return;
       }
 
-      print('🔹 Recuperando agente de saúde...');
+      print('🔹 Recuperando nome do agente de saúde...');
       final prefs = await SharedPreferences.getInstance();
-final agenteSalvo = prefs.getString('usuario');
+      final agente = prefs.getString('usuario');
 
-if (agenteSalvo == null || agenteSalvo.isEmpty) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Erro: usuário não encontrado. Faça login novamente.')),
-  );
-  setState(() => _salvando = false);
-  return;
-}
-
-final agenteSaude = agenteSalvo;
+      if (agente == null || agente.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Usuário não encontrado. Faça login novamente.')),
+        );
+        setState(() => _salvando = false);
+        return;
+      }
 
       print('🔹 Criando objeto Visita...');
       final novaVisita = Visita(
-        agenteSaude: agenteSaude,
+        agenteSaude: agente,
         nomePaciente: _nomePacienteController.text,
         endereco: endereco,
         latitude: position.latitude,
@@ -219,8 +215,11 @@ final agenteSaude = agenteSalvo;
                 backgroundColor: Colors.white,
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              alignment: WrapAlignment.center,
               children: [
                 ElevatedButton(
                   onPressed: () => _signatureController.clear(),

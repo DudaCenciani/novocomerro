@@ -42,7 +42,7 @@ dependencies:
   flutter_image_compress: ^2.1.0
   firebase_storage: ^11.6.4
   firebase_auth: ^4.7.2
-
+  url_launcher: ^6.2.5
   firebase_app_check: ^0.2.0+1
 
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'historico_page.dart';
-import 'admin_page.dart';
 import 'realizar_visita_page.dart';
 import 'fazer_observacao_page.dart';
 import 'visita_storage.dart';
@@ -94,10 +93,7 @@ class _MainPageState extends State<MainPage> {
               const SizedBox(height: 30),
               _buildBotao('Fazer Observação', const FazerObservacaoPage()),
               const SizedBox(height: 30),
-              _buildBotao(
-                'Ver Histórico',
-                widget.isAdmin ? const AdminPage() : const HistoricoPage(),
-              ),
+              _buildBotao('Ver Histórico', const HistoricoPage()),
             ],
           ),
         ),
@@ -125,3 +121,4 @@ class _MainPageState extends State<MainPage> {
     );
   }
 }
+

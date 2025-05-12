@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'visita_model.dart';
 import 'main_page.dart';
 
@@ -10,6 +11,18 @@ class VisualizarVisitaPage extends StatelessWidget {
 
   String formatarDataHora(DateTime dataHora) {
     return DateFormat('dd/MM/yyyy HH:mm').format(dataHora);
+  }
+
+  Future<void> abrirNoMaps(BuildContext context) async {
+    final Uri url = Uri.parse(visita.mapaUrl);
+    if (!await launchUrl(
+      url,
+      mode: LaunchMode.platformDefault, // Mais compatível com Android
+    )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir o mapa.')),
+      );
+    }
   }
 
   @override
@@ -35,6 +48,14 @@ class VisualizarVisitaPage extends StatelessWidget {
             const SizedBox(height: 8),
             Text('Latitude: ${visita.latitude}', style: const TextStyle(fontSize: 14)),
             Text('Longitude: ${visita.longitude}', style: const TextStyle(fontSize: 14)),
+            const SizedBox(height: 12),
+
+            ElevatedButton.icon(
+              icon: const Icon(Icons.map),
+              label: const Text('Ver no mapa'),
+              onPressed: () => abrirNoMaps(context),
+            ),
+
             const SizedBox(height: 16),
             const Text('Foto:', style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),

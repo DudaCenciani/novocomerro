@@ -4,7 +4,7 @@ import 'dart:typed_data';
 class Visita {
   final String agenteSaude;
   final String nomePaciente;
-  final String endereco;
+  String endereco; // Pode ser alterado
   final double latitude;
   final double longitude;
   final DateTime dataHora;
@@ -24,8 +24,11 @@ class Visita {
     this.sincronizada = false,
   });
 
+  /// Mapa para salvar no Firestore
   Map<String, dynamic> toMap() {
-    final fotoValida = fotoBase64 != null && fotoBase64!.isNotEmpty && fotoBase64!.length < 1048487;
+    final fotoValida = fotoBase64 != null &&
+        fotoBase64!.isNotEmpty &&
+        fotoBase64!.length < 1048487;
 
     return {
       'agenteSaude': agenteSaude,
@@ -37,9 +40,11 @@ class Visita {
       'assinaturaBase64': assinaturaBase64,
       if (fotoValida) 'fotoBase64': fotoBase64,
       'sincronizada': sincronizada,
+      'mapaUrl': mapaUrl, // 🔥 Link do Google Maps
     };
   }
 
+  /// Construtor a partir do Firebase ou armazenamento local
   factory Visita.fromMap(Map<String, dynamic> map) {
     if (map['agenteSaude'] == null ||
         map['nomePaciente'] == null ||
@@ -64,6 +69,7 @@ class Visita {
     );
   }
 
+  /// Decodifica a assinatura em imagem
   Uint8List get assinatura {
     try {
       return base64Decode(assinaturaBase64);
@@ -72,6 +78,7 @@ class Visita {
     }
   }
 
+  /// Decodifica a foto em imagem
   Uint8List? get foto {
     if (fotoBase64 == null || fotoBase64!.isEmpty) return null;
     try {
@@ -80,4 +87,8 @@ class Visita {
       return null;
     }
   }
+
+  /// 🔗 Gera a URL exata do Google Maps com latitude e longitude
+  String get mapaUrl =>
+      "https://www.google.com/maps/search/?api=1&query=$latitude,$longitude";
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'visita_model.dart'; // Importa o modelo
+import 'package:url_launcher/url_launcher.dart';
+import 'visita_model.dart';
 
 class DetalhesVisitaPage extends StatelessWidget {
   final Visita visita;
@@ -9,6 +10,15 @@ class DetalhesVisitaPage extends StatelessWidget {
 
   String formatarDataHora(DateTime dataHora) {
     return DateFormat('dd/MM/yyyy HH:mm').format(dataHora);
+  }
+
+  Future<void> abrirNoMapa(BuildContext context) async {
+    final Uri url = Uri.parse(visita.mapaUrl);
+    if (!await launchUrl(url, mode: LaunchMode.platformDefault)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir o mapa.')),
+      );
+    }
   }
 
   @override
@@ -28,6 +38,14 @@ class DetalhesVisitaPage extends StatelessWidget {
             const SizedBox(height: 8),
             Text('Endereço:', style: const TextStyle(fontWeight: FontWeight.bold)),
             Text(visita.endereco, style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 12),
+
+            ElevatedButton.icon(
+              icon: const Icon(Icons.map),
+              label: const Text('Ver no mapa'),
+              onPressed: () => abrirNoMapa(context),
+            ),
+
             const SizedBox(height: 16),
             if (visita.assinatura.isNotEmpty) ...[
               const Text('Assinatura:', style: TextStyle(fontWeight: FontWeight.bold)),

@@ -8,6 +8,7 @@ import 'visita_model.dart';
 import 'detalhes_visita_page.dart';
 import 'login_page.dart';
 import 'exportar_visitas.dart';
+import 'exportar_observacoes.dart';
 import 'sincronizacao_service.dart';
 import 'sincronizacao_observacoes.dart';
 
@@ -18,30 +19,40 @@ class HistoricoPage extends StatefulWidget {
   State<HistoricoPage> createState() => _HistoricoPageState();
 }
 
-class _HistoricoPageState extends State<HistoricoPage> {
+class _HistoricoPageState extends State<HistoricoPage>
+    with SingleTickerProviderStateMixin {
   String _termoBusca = '';
   DateTime? _dataSelecionada;
   String _usuarioLogado = '';
+  String _papelUsuario = 'agente';
+  late TabController _tabController;
 
- @override
-void initState() {
-  super.initState();
-  _carregarUsuario();
-  _carregarDadosLocais();
-}
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _carregarUsuario();
+    _carregarDadosLocais();
+  }
 
-Future<void> _carregarUsuario() async {
-  final prefs = await SharedPreferences.getInstance();
-  setState(() {
-    _usuarioLogado = prefs.getString('usuario') ?? '';
-  });
-}
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
-Future<void> _carregarDadosLocais() async {
-  await VisitaStorage.carregarDados();
-  setState(() {});
-}
+  Future<void> _carregarUsuario() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _usuarioLogado = prefs.getString('usuario') ?? '';
+      _papelUsuario = prefs.getString('role') ?? 'agente';
+    });
+  }
 
+  Future<void> _carregarDadosLocais() async {
+    await VisitaStorage.carregarDados();
+    setState(() {});
+  }
 
   Future<void> _logout() async {
     Navigator.pushAndRemoveUntil(
@@ -80,12 +91,32 @@ Future<void> _carregarDadosLocais() async {
     final todasVisitas = VisitaStorage.visitas;
 
     return todasVisitas.where((visita) {
+      final ehAdmin = _papelUsuario == 'admin';
+      final pertenceAoUsuario = visita.agenteSaude.toLowerCase() == _usuarioLogado.toLowerCase();
+      final podeVisualizar = ehAdmin || pertenceAoUsuario;
+
       final matchBusca = _termoBusca.isEmpty ||
           visita.endereco.toLowerCase().contains(_termoBusca) ||
           visita.nomePaciente.toLowerCase().contains(_termoBusca) ||
           visita.agenteSaude.toLowerCase().contains(_termoBusca);
       final matchData = _dataSelecionada == null || mesmaData(visita.dataHora, _dataSelecionada!);
-      return matchBusca && matchData;
+
+      return podeVisualizar && matchBusca && matchData;
+    }).toList();
+  }
+
+  List<Observacao> _filtrarObservacoes() {
+    final todas = VisitaStorage.observacoes;
+    final isAdmin = _papelUsuario == 'admin';
+
+    return todas.where((obs) {
+      final pertenceAoUsuario = isAdmin || obs.nome.toLowerCase() == _usuarioLogado.toLowerCase();
+      final matchBusca = _termoBusca.isEmpty ||
+          obs.nome.toLowerCase().contains(_termoBusca) ||
+          obs.contato.toLowerCase().contains(_termoBusca) ||
+          obs.observacao.toLowerCase().contains(_termoBusca);
+      final matchData = _dataSelecionada == null || mesmaData(obs.dataHora, _dataSelecionada!);
+      return pertenceAoUsuario && matchBusca && matchData;
     }).toList();
   }
 
@@ -113,14 +144,16 @@ Future<void> _carregarDadosLocais() async {
               icon: const Icon(Icons.file_download),
               tooltip: 'Exportar Histórico',
               onPressed: () async {
-                final visitasFiltradas = _filtrarVisitas();
-                final caminhoArquivo = await exportarVisitasParaCSV(visitasFiltradas);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Histórico exportado! Abrindo arquivo...')),
-                );
-
-                await abrirArquivoCSV(caminhoArquivo);
+                final abaSelecionada = _tabController.index;
+                if (abaSelecionada == 0) {
+                  final visitasFiltradas = _filtrarVisitas();
+                  final caminhoVisitas = await exportarVisitasParaCSV(visitasFiltradas);
+                  await abrirArquivoCSV(caminhoVisitas);
+                } else {
+                  final observacoesFiltradas = _filtrarObservacoes();
+                  final caminhoObs = await exportarObservacoesParaCSV(observacoesFiltradas);
+                  await abrirArquivoObservacoesCSV(caminhoObs);
+                }
               },
             ),
             IconButton(
@@ -129,8 +162,9 @@ Future<void> _carregarDadosLocais() async {
               onPressed: _logout,
             ),
           ],
-          bottom: const TabBar(
-            tabs: [
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: const [
               Tab(text: 'Visitas'),
               Tab(text: 'Observações'),
             ],
@@ -182,6 +216,7 @@ Future<void> _carregarDadosLocais() async {
             ),
             Expanded(
               child: TabBarView(
+                controller: _tabController,
                 children: [
                   _buildVisitasList(),
                   _buildObservacoesList(),
@@ -270,16 +305,7 @@ Future<void> _carregarDadosLocais() async {
   }
 
   Widget _buildObservacoesList() {
-    final observacoes = VisitaStorage.observacoes;
-
-    final observacoesFiltradas = observacoes.where((obs) {
-      final matchBusca = _termoBusca.isEmpty ||
-          obs.nome.toLowerCase().contains(_termoBusca) ||
-          obs.contato.toLowerCase().contains(_termoBusca) ||
-          obs.observacao.toLowerCase().contains(_termoBusca);
-      final matchData = _dataSelecionada == null || mesmaData(obs.dataHora, _dataSelecionada!);
-      return matchBusca && matchData;
-    }).toList();
+    final observacoesFiltradas = _filtrarObservacoes();
 
     if (observacoesFiltradas.isEmpty) {
       return const Center(child: Text('Nenhuma observação registrada.'));

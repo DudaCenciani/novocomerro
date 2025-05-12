@@ -15,9 +15,9 @@ void main() async {
     await Firebase.initializeApp();
 
     await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.debug, // Trocar para playIntegrity ao publicar
-     webProvider: ReCaptchaV3Provider('')  // Não usamos web
-    );
+  androidProvider: AndroidProvider.playIntegrity,
+);
+
   } catch (e) {
     debugPrint('⚠️ Firebase não pôde ser inicializado: $e');
   }
